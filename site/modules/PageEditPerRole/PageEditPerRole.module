@@ -1,0 +1,574 @@
+<?php
+
+/**
+ * Page Edit Per Role
+ * =====================
+ *
+ * @website https://github.com/ryannmicua/PageEditPerRole
+ * @author Ryann Micua <http://pogidude.com/>
+ * @license GPL 3 <http://www.gnu.org/licenses/gpl-3.0.txt>
+ * 
+ * Assign edit access to users in a role on a per-page or per-branch basis.
+ *
+ * The role must already have page-edit permission in order to get 
+ * edit access to assigned pages. Otherwise, they will only gain view access. 
+ *
+ * This module is fully functional as-is, but intended as a proof-of-concept for those wanting
+ * to go further with adding custom edit and/or view access.
+ *
+ * Original idea is from PageEditPerRole module by Ryan Cramer, http://processwire.com
+ *
+ */
+
+class PageEditPerRole extends WireData implements Module, ConfigurableModule {
+
+	public static function getModuleInfo() {
+		return array(
+			'title' => 'Page Edit Per Role', 
+			'version' => 1, 
+			'summary' => 'Assign edit/add access to users in a role on a per-branch basis.',
+			'singular' => true, 
+			'autoload' => true,
+			'requires' => 'FieldtypeTemplates'
+			);
+	}
+
+	/**
+	 * Attach our hooks to Page::editable and Page::viewable
+	 *
+	 */
+	public function init() {
+		$this->addHookBefore('ProcessPageAdd::execute', $this, 'hookProcessPageAddExecute');
+		//$this->addHookBefore('Fieldtype::savePageField', $this, 'hookSavePageField');
+
+		$this->addHookAfter('Page::editable', $this, 'hookPageEditable'); 
+		$this->addHookAfter('Page::viewable', $this, 'hookPageEditable'); 
+		$this->addHookAfter('Page::publishable', $this, 'hookPagePublishable');
+		$this->addHookAfter('Page::moveable', $this, 'hookPageMoveable');
+		$this->addHookAfter('Page::sortable', $this, 'hookPageSortable');
+		$this->addHookAfter('Page::deleteable', $this, 'hookPageDeleteable');
+		$this->addHookAfter('Page::addable', $this, 'hookPageAddable');
+		$this->addHookAfter('Page::editable', $this, 'hookPageEditableOnAddable');
+
+		//$this->addHookAfter('User::hasPagePermission', $this, 'hookHasPagePermission');
+		$this->addHookAfter('ProcessPageAdd::getAllowedTemplates', $this, 'hookGetAllowedTemplates');
+
+
+	}
+
+	/**
+	 * Check if this page, or any ancestor pages, are editable
+	 *
+	 * From Netcarver
+	 *
+	 */
+	public function onMyBranch($page) {
+
+		$user = $this->fuel('user');
+
+		//get the roles user has
+		$user_roles = $user->roles;
+
+		//set to false until proven otherwise
+		$page_on_my_branch = false;
+
+		foreach($user_roles as $role){
+
+			$editable_pages = $role->role_editable_pages;
+
+			if(count($editable_pages)){
+
+				$page_on_my_branch = $editable_pages->has($page);
+
+				//scan ancestors if applicable
+				if($this->scan_ancestors && !$page_on_my_branch){
+					$parents = $page->parents;
+					while(!$page_on_my_branch && count($parents)){
+						$p = $parents->pop();
+						$page_on_my_branch = $editable_pages->has($p);
+					}
+				}
+
+				if($page_on_my_branch){
+					//page is editable, return!
+					return $page_on_my_branch;
+				}
+			}
+		}
+
+		//$page_on_my_branch = true;
+		/*
+		$page_on_my_branch = $this->role->role_editable_pages->has($page);
+		if($this->scan_ancestors && !$page_on_my_branch) {
+			$parents = $page->parents();
+			while(!$page_on_my_branch && count($parents)) {
+				$p = $parents->pop();
+				$page_on_my_branch = $this->role->role_editable_pages->has($p);
+			}
+		}
+		*/
+
+		//explicitly return false?
+		return $page_on_my_branch;
+	}
+
+	/**
+	 * Check if this page, or ancestors are addable
+	 */
+	protected function canAdd($page){
+		$user = $this->user;
+
+		//get the roles user has
+		$user_roles = $user->roles;
+
+		$can_add = false;
+
+		foreach($user_roles as $role){
+			if(count($role->role_add_children_pages)){
+
+				$can_create = $role->role_add_children_pages->has($page);
+				
+				//scan ancestors if applicable
+				if($this->scan_ancestors && !$can_create){
+					$parents = $page->parents;
+					while(!$can_create && count($parents)){
+						$p = $parents->pop();
+						$can_create = $role->role_add_children_pages->has($p);
+					}
+				}
+
+				if($can_create){
+					//can add pages, return!
+					return $can_create;
+				}
+			}
+		}
+
+		return $can_add;
+	}
+
+	/**
+	 * Allow user edit privileges on pages they created.
+	 * 
+	 * Check if page is editable by checking if the page was created by user
+	 * by the same user and the page is a child whose parent is in the
+	 * role_add_children_pages field (assuming user has role that has this field)
+	 */
+	public function hookPageEditableOnAddable($event){
+		if($event->return) return;
+
+		$page = $event->object;
+
+		$user = $this->user;
+		$user_roles = $user->roles;
+
+		$can_create = false;
+		foreach($user_roles as $role){
+			if(count($role->role_add_children_pages)){
+
+				//scan parents if any are addable
+				$parents = $page->parents;
+				while(!$can_create && count($parents)){
+					$p = $parents->pop();
+					$can_create = $role->role_add_children_pages->has($p);
+				}
+
+				if($can_create){
+					//can add pages, stop!
+					break;
+				}
+			}
+		}
+
+		//stop if no parents are addable - means user can't edit pages here
+		//even if they created it.
+		if(!$can_create) return;
+
+		//allow edit only on pages user has created
+		if( $page->created_users_id == $user->id ){
+            $event->return = true;
+      }
+
+	}
+
+
+	/**
+	 * Page::editable hook
+	 *
+	 */
+	public function hookPageEditable($event) {
+		if($event->return) return;
+
+		if($this->user->hasPermission('page-edit')) {
+			$event->return = $this->onMyBranch($event->object);
+		}
+	}
+
+
+	/**
+	 * Page::publishable hook
+	 */
+	public function hookPagePublishable($event){
+		if($event->return) return;
+
+
+		$user = $this->user;
+		$page = $event->object;
+
+		//check if editable based on module
+		$editable = $this->onMyBranch($page);
+
+		if(!$editable){
+			return;
+		}
+
+		// if there is no page-publish permission, then it's publishable
+		$perm = wire('permissions')->get('page-publish'); 
+		if(!$perm->id){
+			$event->return = true;
+			return;
+		}
+
+		//check if user has the permission assigned.
+		if($user->hasPermission('page-publish')){
+			$event->return = true;
+			return;
+		}
+
+	}
+
+
+	/**
+	 * Page::viewable hook
+	 *
+	 */
+	public function hookPageViewable($event) {
+		if($event->return) return;
+		$event->return = $this->onMyBranch($event->object);
+	}
+
+
+	/**
+	 * Page::moveable hook
+	 */
+	public function hookPageMoveable($event){
+		if($event->return) return;
+
+		$user = $this->user;
+		$page = $event->object;
+
+		//check if editable based on module
+		$editable = $this->onMyBranch($page);
+
+		if(!$editable){
+			return;
+		}
+
+		//check if user has the permission assigned.
+		if($user->hasPermission('page-move')){
+			$event->return = true;
+			return;
+		}
+	}
+
+
+	/**
+	 * Page::sortable hook
+	 */
+	public function hookPageSortable($event){
+		if($event->return) return;
+
+		$user = $this->user;
+		$page = $event->object;
+
+		//check if editable based on module
+		$editable = $this->onMyBranch($page);
+
+		if(!$editable){
+			return;
+		}
+
+		//check if user has the permission assigned.
+		if($user->hasPermission('page-sort')){
+			$event->return = true;
+			return;
+		}
+
+	}
+
+
+	/**
+	 * Page::addable hook
+	 */
+	public function hookPageAddable($event){
+		if($event->return) return;
+
+		$page = $event->object;
+
+		if($page->template->noChildren){
+			return;
+		}
+
+		if($this->user->hasPermission('page-edit')){
+			$event->return = $this->canAdd($event->object);
+		}
+
+	}
+
+
+	/**
+	 * Page::deleteable hook
+	 */
+	public function hookPageDeleteable($event){
+		if($event->return) return;
+
+		$user = $this->user;
+		$page = $event->object;
+
+		//check if editable based on module
+		$editable = $this->onMyBranch($page);
+
+		if(!$editable){
+			return;
+		}
+
+		//check if user has the permission assigned.
+		if($user->hasPermission('page-delete')){
+			$event->return = true;
+			return;
+		}
+	}
+
+	/**
+	 * User::hasPagePermission hook
+	 */
+	public function hookHasPagePermission($event){
+		if($event->return) return;
+
+		$name = $event->arguments('name');
+		$page = $event->arguments('page');
+
+		//only concern ourselves with 'page-create' for now
+		if($name != 'page-create') return;
+
+		$user = $event->object;
+
+		$event->return = true;
+	}
+
+	/**
+	 * ProcessPageAdd::execute()
+	 * Have to do this because if not, calling $this->parent->editable() in ProcessPageAdd::getAllowedTemplates()
+	 * will remove the parent page from the role_editable_pages field. weird I know.
+	 */
+	public function hookProcessPageAddExecute($event){
+
+		foreach($this->user->roles as $r){
+			$r->role_editable_pages;
+		}
+
+	}
+
+	/**
+	 * ProcesspageAdd::getAllowedTemplates()
+	 */
+	public function hookGetAllowedTemplates($event){
+
+		$allowed_templates = $event->return;
+		$user = $this->user;
+
+		//get the parent. TODO: can be improved by getting parent from $event?
+		if(isset($_POST['parent_id'])) {
+			$parent_id = (int) $_POST['parent_id']; 
+		} else {
+			$parent_id = isset($_GET['parent_id']) ? (int) $_GET['parent_id'] : 1; 
+		}
+
+		$parent = $this->pages->get($parent_id); 
+		if(!$parent) throw new Wire404Exception("The parent page could not be loaded ({$parent_id})");
+
+		//get all templates user is allowed to use
+		$permitted = array();
+		foreach($user->roles as $role){
+			if(!count($role->role_permitted_templates)) continue;
+
+			$current_permitted = $role->role_permitted_templates;
+			foreach($current_permitted as $c){
+				if(in_array($c, $permitted)) continue;
+				$permitted[] = $c;
+			}
+		}
+
+		//now add additional templates into the allowedTemplates array
+		foreach($this->templates as $t){
+
+			if(!in_array($t->id, $permitted)) continue;
+
+			/** The ff. checks are from ProcessPageAdd::getAllowedTemplates() **/
+			if($t->noParents) continue; 
+
+			if(count($parent->template->childTemplates)) {
+				if(!in_array($t->id, $parent->template->childTemplates)) continue; 
+			} 
+
+			if(count($t->parentTemplates)) {
+				if(!in_array($parent->template->id, $t->parentTemplates)) continue; 
+			}
+
+			if($t->flags & Template::flagSystem) { 
+				if($t->name == 'user' && $parent->id != $this->config->usersPageID) continue; 
+				if($t->name == 'role' && $parent->id != $this->config->rolesPageID) continue; 
+				if($t->name == 'permission' && $parent->id != $this->config->permissionsPageID) continue; 
+			}
+
+			$allowed_templates[$t->id] = $t;
+		}
+
+		$event->return = $allowed_templates;
+	}
+
+	/**
+	 * Fieldtype::savePageField() hook
+	 * we added this hook because 
+	 */
+	public function hookSavePageField($event){
+		$field = $event->arguments('field');
+		$page = $event->arguments('page');
+
+		$field_name = 'role_permitted_templates';
+		if($field->name != $field_name) return;
+
+		$value = $page->get($field_name);
+
+		//sanitize
+		$value = $this->sanitizer->names($value, ',', array('-', '_'));
+
+		$page->set($field_name, $value);
+	}
+
+	/**
+	 * Install the module and add the 'role_editable_pages' field to the role template
+	 *
+	 */
+	public function ___install() {
+		//*
+		
+		$fieldgroup = $this->fieldgroups->get('role');
+		
+		//add role_editable_pages
+		if(!$this->fields->get('role_editable_pages')){
+			$field_editable = new Field(); 
+			$field_editable->name = 'role_editable_pages';
+			$field_editable->label = 'Pages users with this role may edit';
+			$field_editable->labelFieldName = 'path';
+			$field_editable->type = wire('modules')->get('FieldtypePage'); 
+			$field_editable->inputfield = 'InputfieldPageListSelectMultiple';
+			$field_editable->description = 
+				'In order to edit pages, this role must have page-edit permission or the user must also have another role with page-edit permission. ' . 
+				'If they do not have page-edit permission, they will only be able to view the selected pages.';
+			$field_editable->save();
+			$fieldgroup->add($field_editable);
+
+			$this->message("Added field 'role_editable_pages' to the role template.");
+		}
+
+		//add role_add_children_pages
+		if(!$this->fields->get('role_add_children_pages')){
+			$field_addable = new Field();
+			$field_addable->name = 'role_add_children_pages';
+			$field_addable->label = 'Pages users with this role may add to';
+			$field_addable->labelFieldName = 'path';
+			$field_addable->type = wire('modules')->get('FieldtypePage'); 
+			$field_addable->inputfield = 'InputfieldPageListSelectMultiple';
+			$field_addable->description =
+				'In order to add to child pages, this role must have page-edit permission or the user must also have another role with page-edit permission.';
+			$field_addable->save();
+			$fieldgroup->add($field_addable);
+
+			$this->message("Added field 'role_add_children_pages' to the role template.");
+		}
+
+		//add role_permitted_templates
+		if(!$this->fields->get('role_permitted_templates')){
+			$field_templates = new Field();
+			$field_templates->name = 'role_permitted_templates';
+			$field_templates->label = 'Templates users with this role may use on pages they can add to';
+			$field_templates->labelFieldName = 'name';
+			$field_templates->type = wire('modules')->get('FieldtypeTemplates');
+			//$field_templates->inputfield = 'InputfieldPageName';
+			$field_templates->description = 'Select the templates that users with this role can use when adding child pages to parent pages they have permission to add pages to. NOTE: Templates specified here may not actually show up when adding a new page family settings on the templates.';
+			$field_templates->save();
+			$fieldgroup->add($field_templates);
+
+			$this->message("Added field 'role_permitted_templates' to the role template.");
+		}
+
+		//now save to fieldgroup
+		
+		$fieldgroup->save();
+		
+		//*/
+	}
+
+	/**
+	 * Uninstall 'role_editable_pages' field
+	 *
+	 */
+	public function ___uninstall() {
+		//*
+		$field_names = array(
+			'role_editable_pages',
+			'role_add_children_pages',
+			'role_permitted_templates'
+			);
+
+		//$field = $this->fields->get('role_editable_pages');
+		$fieldgroup = $this->fieldgroups->get('role');
+
+		if($fieldgroup){
+			foreach($field_names as $field_name){
+				$field = null;
+				$field = $this->fields->get($field_name);
+				if($field){
+					$fieldgroup->remove($field);
+					$fieldgroup->save();
+					$this->fields->delete($field);
+					$this->message('Removed field: ' . $field_name);
+				}
+
+			}
+		}
+		//*/
+
+	}
+
+	/**
+	 * Default settings used by this module
+	 *
+	 */
+	static protected $defaultSettings = array(
+		'scan_ancestors' => 0
+	);
+
+	/**
+	 * Build a form allowing configuration of this Module
+	 *
+	 */
+	static public function getModuleConfigInputfields(array $data) {
+
+		$fields = new InputfieldWrapper();
+		$data = array_merge(self::$defaultSettings, $data);
+
+		// Scan ancestor nodes for edit permission?
+		$f = wire('modules')->get('InputfieldRadios');
+		$f->attr('name', 'scan_ancestors');
+		$f->label = __('Consider permissions further up the branch too?', __FILE__);
+		$f->addOption(0, __('No', __FILE__));
+		$f->addOption(1, __('Yes', __FILE__));
+		$f->attr('value', $data['scan_ancestors']);
+		$fields->add($f);
+
+		return $fields;
+	}
+}
+

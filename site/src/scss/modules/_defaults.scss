@@ -1,0 +1,30 @@
+* {
+  box-sizing: border-box;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+html {
+  font-size: 50%;
+  @media (min-width: 750px) {
+    font-size: 62.5%;
+  }
+}
+body {
+  font-family: $font-sans-serif;
+  background: $main-background-color;
+  color: $text-color;
+  font-size: $default-font-size;
+}
+
+h1, h2 {
+  font-family: $font-cursive;
+  color: $headline-color;
+}
+
+h1 {
+  font-size: $h1-font-size;
+}
+
+h2 {
+  font-size: $h2-font-size;
+}

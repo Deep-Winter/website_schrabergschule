@@ -1,0 +1,86 @@
+.main {
+    padding: 20px 0px;
+    @media (min-width: 750px) {
+      padding: 20px;
+    }
+    
+    padding-top: 0;
+
+    .table {
+        width: 100%;
+    }
+
+    img.align_left {
+        margin-right: 30px;
+        float: left;
+        clear: both;
+    }
+
+    img.align_right {
+        margin-left: 30px;
+        float: right;
+        clear: both;
+    }
+
+    img.align_center {
+    display: block;
+        margin: 0 auto;
+    }
+
+    img.hidpi {
+	    width: 100% !important;
+	    @media (min-width: 750px) {
+			// width: 80% !important;
+			// margin: auto;
+    	}
+
+        
+    }
+
+    a {
+        color: $color-orange;
+        text-decoration: none;
+
+        &:hover {
+            color: $color-red;
+        }
+
+    }
+
+    a.appointment:before {
+               content: '\f073';
+    }
+
+    ul {
+        li {
+            a {
+                &:before {
+                    content: '';
+                    margin: 0;
+                }
+            }
+        }
+    }
+
+    h2.classteacher > a:before {
+        content: '';
+        margin: 0;
+    }
+
+    a[href$= ".pdf"] {
+        &:before {
+            content: "\f1c1" !important;
+        }
+    }
+
+    .schullogo {
+        img {
+            padding: 0;
+            border: 0;
+            // width: 100%;
+            margin: 0 auto;
+            display: block;
+        }
+    }
+
+}

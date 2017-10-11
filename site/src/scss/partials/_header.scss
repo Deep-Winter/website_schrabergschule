@@ -1,0 +1,55 @@
+.header {
+  .logo {
+    padding-top: 80px;
+    padding-left: 20px;
+    padding-right: 20px;
+    
+    /* Larger than mobile */
+    @media (min-width: 750px) {
+      padding-right: 0;
+      padding-top: 20px;
+    }
+
+    img {
+      width: 100%;
+    }
+  }
+
+  .schullogo {
+    padding-top: 0px;
+    padding-right: 20px;
+    text-align: right;
+
+    img {
+      width: 200px;
+    }
+  }
+
+  .search-form {
+    display: none;
+    @media (min-width: 750px) {
+      display: block;
+    }
+    text-align: right;
+    padding-top: 25px;
+    padding-right: 15px;
+    padding-left: 20px;
+    margin: 0;
+
+    @media (min-width: 750px) {
+      padding-left: 0;
+    }
+  }
+
+  .breadcrumb {
+    padding-left: 20px;
+    margin-top: 2px;
+    line-height: 40px;
+  }
+
+  .edit {
+    width: auto;
+    float: right;
+    padding-right: 20px;
+  }
+}

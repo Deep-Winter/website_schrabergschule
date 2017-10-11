@@ -1,0 +1,44 @@
+#login-form {
+
+    .toggle-icon {
+        display: none;
+    }
+
+  ul.Inputfields {
+    list-style: none;
+    padding: 0;
+  }
+
+  .InputfieldHidden {
+    display: none;
+  }
+
+  .InputfieldError {
+      margin: 0;
+      color: $color-red;
+  }
+
+  .InputfieldStateRequired {
+    label:after {
+      content: "*";
+      margin-left: 3px;
+      color: $color-red;
+    }
+  }
+}
+
+// Default input form
+.InputfieldForm {
+  p.error {
+    color: $color-red;
+    margin: 0;
+  }
+
+  .required {
+    label:after {
+      content: "*";
+      margin-left: 3px;
+      color: $color-red;
+    }
+  }
+}

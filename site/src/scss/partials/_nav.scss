@@ -1,0 +1,276 @@
+.site-nav {
+  display: none;
+    @media (min-width: 750px) {
+      display: block;
+    }
+
+  padding: 0;
+  padding-top: 27px;
+  padding-right: 15px;
+  text-align: right;
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+     display: inline; 
+     margin: 0 10px;
+  }
+
+  a {
+    color: $site-nav-text-color;
+    font-weight: 700;
+    font-size: 11pt;
+    text-decoration: none;
+
+    &:hover {
+      color: $site-nav-hover-color;
+    }
+  }
+}
+
+.main-nav {
+  display: none;
+  @media (min-width: 750px) {
+    display: block;
+  }
+  padding-right: 20px;
+  text-align: right;
+  list-style: none;
+  li {
+     display: inline; 
+     margin: 0 5px;
+  }
+
+  a {
+    display: inline-block;
+    padding: 10px;
+    background: $navigation-button-background-color;
+    color: white;
+    font-weight: 400;
+    font-size: 11pt;
+    text-decoration: none;
+
+    &:hover {
+      background: $navigation-button-background-hover-color;
+    }
+  }
+  
+  .current a {
+	  position: relative;
+    background: $navigation-button-background-hover-color;
+    
+     &:after {
+	    content:'';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -15px;
+    width: 0;
+    height: 0;
+    border-top: solid 12px $navigation-button-background-hover-color;
+    border-left: solid 15px transparent;
+    border-right: solid 15px transparent;}
+
+  }
+}
+
+.sub-nav {
+  display: none;
+  @media (min-width: 750px) {
+    display: block;
+  }
+  padding-right: 20px;
+  padding-left: 434px;
+  text-align: left;
+  list-style: none;
+  li {
+     display: inline; 
+     margin: 0 5px;
+  }
+  // border-top: 1px solid #ddd;
+  	//border-bottom: 1px solid #ddd;
+
+  a {
+    display: inline-block;
+    padding: 10px;
+    color: $text-color;
+    font-weight: 400;
+    font-size: 11pt;
+    text-decoration: none;
+    background: none; //#f8f8f8;
+
+
+    &:hover {
+	    color: $navigation-button-background-hover-color;
+    background: none; // #f8f8f8;
+
+      
+    }
+  }
+  
+  .current a {
+	  background: $navigation-button-background-hover-color;
+      color: white;
+      
+  	}
+}
+
+.nav, .link-list {
+  font-size: 13pt;
+
+  ul {
+    margin-top: 0;
+    margin-bottom: 3px;
+    font-size: 12pt;  
+
+    li > a {
+      color: $color-orange;
+    }
+  }
+
+  li > a {
+    color: $color-blue;
+  }
+
+  li {
+    // list-style-type: none;
+
+    .role, .shortdescription {
+      padding-left: 10px;
+      font-size: 10pt;
+
+      &:before {
+        content: "(";
+      }
+
+      &:after {
+        content: ")";
+      }
+    }
+
+    .shortdescription {
+        display: inline-block;
+        padding-left: 5px;
+      }
+  }
+
+  a {
+    display: inline-block;
+    padding: 3px 6px;
+
+/*
+    &:before {
+      margin-right: 5px !important;
+      //content: "\f0da" !important;
+      display: inline-block;
+      background-image: url('../img/Kreidestrich_30_10.png');
+      background-repeat: no-repeat;
+      width: 25px;
+      height: 10px;
+      background-size: 100%;
+      background-position-y: 3px;
+
+    } */
+  }
+
+
+  li.current > a {
+    color: white;
+    // font-weight: 700;
+    background: $color-red;
+    color: white;
+    // text-decoration: underline;
+  }
+}
+
+.nav {
+  display: none;
+    @media (min-width: 750px) {
+      display: block;
+  }
+}
+
+.mobile {
+  display: block;
+  @media (min-width: 750px) {
+    display: none;
+  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(50,52,54,0.9);
+  box-shadow: 0px 3px 5px rgba(0,0,0,0.3);
+  z-index: 9000;
+
+  .navigation-trigger {
+    color: white;
+    font-size: 20pt;
+    border: none;
+    position: absolute;
+    top: 10px;
+    left: 0px;
+  }
+
+  .mobile-navigation {
+    padding: 10px;
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    // bottom: 0;
+    top: 60px;
+    bottom: 0; 
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0px 3px 5px rgba(0,0,0,0.3);
+    overflow-y: scroll;
+    border-right: 1px solid #353637;
+  }
+  
+  ul.mobile-nav {
+	  border-top: 1px solid #c0c0c0;
+	  padding: 0;
+	  margin: 0;
+	  list-style-type: none;
+	  li {
+		  background: white;
+		  padding: 10px;
+		  margin: 0;
+		  border-bottom: 1px solid #c0c0c0;
+		  
+		  a {
+			  display: block;
+			  top: 0;
+			    left: 0;
+			    width: 100%;
+			    height: 100%;
+			  text-decoration: none;
+			  color: black;
+		  }
+		 
+		  >ul {
+			  margin-top: 10px;
+			  margin-left: -10px;
+			  margin-right: -10px;
+			  
+			  li {
+				  padding-left: 40px;
+				  font-size: 12pt;
+				  
+				  a {
+					  color: #999999;
+				  }
+			  }
+			  li:last-child {
+				  padding-bottom: 0;
+				  border-bottom: none;
+			  }
+		  }
+	  }
+  }
+}

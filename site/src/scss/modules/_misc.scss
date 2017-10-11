@@ -1,0 +1,136 @@
+@include selection($selection-bg: #333, $selection-c: #fff, $selection-ts: none);
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+text-left {
+    text-align: right;
+}
+
+.page-background {
+    background: white;
+    background-image: url('../img/page_background_960px.jpg');
+    background-repeat: no-repeat;
+}
+
+.patch-container {
+    position: relative;
+}
+
+.patch {
+    position: absolute;
+    width: 200px;
+    height: 180px;
+    background-repeat: no-repeat;
+    z-index: 8000;
+
+    &.blue {
+        background-image: url('../img/Klecks_blau.png');
+        position: relative;
+        background-size: 80%;
+        margin: 0 auto;
+    }    
+
+    &.green {
+        background-image: url('../img/Klecks_gruen.png');
+        right: -150px;
+        top: 500px;
+        display: none;
+         @media (min-width: 750px) {
+           display: block;
+        }
+    }    
+
+    &.red {
+        background-image: url('../img/Klecks_rot.png');
+        background-size: 100%;
+        right: -50px;
+        top: 360px;
+        display: none;
+        @media (min-width: 750px) {
+            right: 20%;
+            top: 360px;
+            display: block;	
+        }
+        &.homepage {
+	        @media (min-width: 750px) {
+	            top: 300px;
+	            
+            }
+        }
+        
+    }    
+
+    &.yellow {
+        background-image: url('../img/Klecks_gelb.png');
+        right: -125px;
+        top: 800px;
+        display: none;
+         @media (min-width: 750px) {
+           display: block;
+        }
+    }    
+}
+
+.small-content {
+    width: 50%;
+}
+
+#calendar {
+    table {
+        margin-bottom: 0;
+    }
+
+    .fc-day {
+        background: white;
+
+        &.fc-today {
+            background: lighten(#f8DF32, 30);
+        }
+    }
+
+    
+    
+
+    .fc-event {
+        background: $color-green;
+        border-color: $color-green;
+        color: white;
+
+        &:before {
+            content: '';
+        }
+
+        cursor: pointer;
+        
+        &:hover {
+            background: $color-red;
+            border-color: $color-red;
+        }
+    }
+}
+
+.person, .klasse {
+	text-align: center;
+	
+	h4 {
+		margin: 0;
+		padding: 0;
+		font-size: 13pt;
+	}
+	
+	.portrait {
+		width: 100%;
+	}
+	.small-content {
+		width: 100%;
+		text-align: center;
+		font-size: 10pt;
+	}
+}
+
